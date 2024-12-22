@@ -20,12 +20,11 @@ export async function GET(req) {
                 attendance_id: ATTENDANCE.id,
             })
             .from(STUDENTS)
-            .leftJoin(ATTENDANCE, eq(STUDENTS.id, ATTENDANCE.student_id))
+            .leftJoin(ATTENDANCE, and(eq(STUDENTS.id, ATTENDANCE.student_id), eq(ATTENDANCE.date, month)))
             .where(
-                and(
+              
                     eq(STUDENTS.grade, grade),
-                    or(eq(ATTENDANCE.date, month), isNull(ATTENDANCE.date))
-                )
+                 
             );
 
         return NextResponse.json(result);
@@ -38,17 +37,44 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const data = await req.json();
+
+        // Validate required fields
+        if (!data.student_id || !data.day || !data.present || !data.date) {
+            return NextResponse.json({ error: "All fields are required." }, { status: 400 });
+        }
+
+        // Insert attendance into the database
         const result = await db.insert(ATTENDANCE).values({
             student_id: data.student_id,
             present: data.present,
             day: data.day,
-            date: data.date,
+            date: data.date, // Ensure this is formatted correctly
         });
 
         return NextResponse.json({ message: "Attendance created successfully", result }, { status: 201 });
-
+    } catch (error) {
+        console.error("Error processing request:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
-    catch (error) {
+}
+
+export async function DELETE(req) {
+    try {
+        const searchParams = req.nextUrl.searchParams;
+       const student_id = searchParams.get("student_id");
+       const day = searchParams.get("day");
+       const date = searchParams.get("date");
+
+        const result = await db.delete(ATTENDANCE).where(
+            and(
+                eq(ATTENDANCE.student_id, student_id),
+                eq(ATTENDANCE.day, day),
+                eq(ATTENDANCE.date, date)
+
+            )
+        );
+        return NextResponse.json(result);
+    } catch (error) {
         console.error("Error processing request:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
