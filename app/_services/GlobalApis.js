@@ -61,7 +61,13 @@ const GlobalApis = {
   },
 
   MarkAttendanceDelete: async ({ student_id, day, date }) => {
-    return axios.delete(`/api/attendance?student_id=${student_id}&day=${day}&date=${date}`)
+    return axios.delete('/api/attendance', {
+      params: {
+        student_id: student_id,
+        day: day,
+        date: date
+      }
+    })
       .then(response => response.data)
       .catch(error => {
         console.error("Error deleting attendance:", error);

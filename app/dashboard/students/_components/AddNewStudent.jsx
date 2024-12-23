@@ -14,31 +14,41 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import GlobalApis from "@/app/_services/GlobalApis";
 import { toast } from "sonner";
-const AddNewStudent = () => {
+const AddNewStudent = ({refreshData}) => {
   const { register, handleSubmit, setValue,reset, formState: { errors } } = useForm();
   const [open, setOpen] = useState(false)
 const [grades,setGrades] = useState([])
+const [loading, setLoading] = useState(false);
+
   const onSubmit = async (data) => {
     console.log("Form Data:", data);
+    setLoading(true);
     try {
       
       await GlobalApis.createNewStudent(data);
+      
       reset();
+      await refreshData();
       toast.success("Student created successfully");
 
        // Call createNewStudent with form data
       console.log("Student created successfully");
     } catch (error) {
       console.error("Error creating student:", error);
+      toast.error("Failed to create student");
+    } finally {
+      setLoading(false);
+      setOpen(false);
     }
-    setOpen(false);
   };
   useEffect(() => {
     async function getAllGradesList() {
       try {
         const data = await GlobalApis.GetAllGrades();
+        
         console.log("data", data);
         setGrades(data)
+   
       } catch (error) {
         console.error("Error fetching grades:", error);
       }
@@ -91,8 +101,11 @@ const [grades,setGrades] = useState([])
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Saving..." : "Save"}
+                  </Button>
                 </div>
+                {loading && <div className="text-center mt-2">Loading...</div>}
               </form>
             </DialogDescription>
           </DialogHeader>

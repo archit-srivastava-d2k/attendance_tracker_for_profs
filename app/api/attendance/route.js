@@ -9,23 +9,28 @@ export async function GET(req) {
         const month = searchParams.get("month");
         const grade = searchParams.get("grade");
 
+        // Ensure that the month and grade are provided
+        if (!month || !grade) {
+            return NextResponse.json({ error: "Month and grade are required." }, { status: 400 });
+        }
+
         const result = await db
-            .select({
-                name: STUDENTS.name,
-                present: ATTENDANCE.present,
-                day: ATTENDANCE.day,
-                date: ATTENDANCE.date,
-                grade: STUDENTS.grade,
-                student_id: ATTENDANCE.student_id,
-                attendance_id: ATTENDANCE.id,
-            })
-            .from(STUDENTS)
-            .leftJoin(ATTENDANCE, and(eq(STUDENTS.id, ATTENDANCE.student_id), eq(ATTENDANCE.date, month)))
-            .where(
-              
-                    eq(STUDENTS.grade, grade),
-                 
-            );
+    .select({
+        name: STUDENTS.name,
+        present: ATTENDANCE.present,
+        day: ATTENDANCE.day,
+        date: ATTENDANCE.date,
+        grade: STUDENTS.grade,
+        student_id: STUDENTS.id, // Use STUDENTS.id directly
+        attendance_id: ATTENDANCE.id,
+    })
+    .from(STUDENTS)
+    .leftJoin(
+        ATTENDANCE,
+        and(eq(STUDENTS.id, ATTENDANCE.student_id), eq(ATTENDANCE.date, month))
+    )
+    .where(eq(STUDENTS.grade, grade));
+        console.log("Fetched attendance data:", result); // Debugging log
 
         return NextResponse.json(result);
     } catch (error) {
@@ -37,12 +42,6 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const data = await req.json();
-
-        // Validate required fields
-        if (!data.student_id || !data.day || !data.present || !data.date) {
-            return NextResponse.json({ error: "All fields are required." }, { status: 400 });
-        }
-
         // Insert attendance into the database
         const result = await db.insert(ATTENDANCE).values({
             student_id: data.student_id,
@@ -50,6 +49,7 @@ export async function POST(req) {
             day: data.day,
             date: data.date, // Ensure this is formatted correctly
         });
+        console.log("student_id", data.student_id);
 
         return NextResponse.json({ message: "Attendance created successfully", result }, { status: 201 });
     } catch (error) {

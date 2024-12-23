@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ModuleRegistry, provideGlobalGridOptions } from 'ag-grid-community';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
-
+import { Suspense } from "react";
 LicenseManager.setLicenseKey('your License Key');
 
 // Register all enterprise features
@@ -96,7 +96,9 @@ const StudentListTable = ({ students = [] , refreshData}) => {
         <Input onChange={(e) => setInput(e.target.value)} type="text" placeholder="Search"
          />
 
+
       </div>
+      <Suspense fallback={<div>Loading...</div>}>
       <AgGridReact
         rowData={rowData}
         columnDefs={colDefs}
@@ -105,6 +107,7 @@ const StudentListTable = ({ students = [] , refreshData}) => {
         paginationPageSize={10}
         quickFilterText={input}
       />
+      </Suspense>
     </div>
   );
 };

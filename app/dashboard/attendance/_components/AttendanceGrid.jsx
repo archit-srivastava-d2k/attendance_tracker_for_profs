@@ -22,8 +22,8 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
     const userList = uniqueRecord();
 
     const daysInMonth = (month, year) => new Date(year, month, 0).getDate();
-    const year = moment(selectmonth, "YYYY-MM").year();
-    const month = moment(selectmonth, "YYYY-MM").month() + 1;
+    const year = moment(selectmonth, "MM/YYYY").year();
+    const month = moment(selectmonth, "MM/YYYY").month() + 1;
     const numberOfDays = daysInMonth(month, year);
     const daysArray = Array.from({ length: numberOfDays }, (_, i) => i + 1);
 
@@ -39,8 +39,8 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
 
     // Define column definitions
     const staticCols = [
-      { headerName: "ID", field: "student_id",filter:true , width: 100 },
-      { headerName: "Student Name", field: "name" , filter:true},
+      { headerName: "ID", field: "student_id" },
+      { headerName: "Student Name", field: "name" },
     ];
 
     const dynamicDayCols = daysArray.map((day) => ({
@@ -94,6 +94,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
           student_id: params.data.student_id,
           presentStatus,
         });
+        console.log("student_id", params.data.student_id);
 
         if (!success) {
           // Revert changes in case of an API error
@@ -102,7 +103,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
         }
       } else {
         // Call API to delete attendance
-        const date = moment(selectmonth).format("MM/yyyy");
+        const date = moment(selectmonth).format("MM/YYYY");
         const success = await MarkAttendanceDelete({
           student_id: params.data.student_id,
           day,
@@ -129,14 +130,16 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
   };
 
   const OnMarkAttendance = async ({ day, student_id, presentStatus }) => {
-    const date = moment(selectmonth).format("MM/yyyy");
+    const date = moment(selectmonth).format("MM/YYYY");
     const data = {
       day,
       student_id,
       present: presentStatus ? 'true' : 'false',
       date,
     };
-  
+
+    console.log("Mark Attendance",data);
+
     try {
       await GlobalApis.MarkAttendance(data);
       toast.success(
@@ -145,7 +148,8 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
       return true;
     } catch (error) {
       console.error("Error marking attendance:", error);
-      toast.error("Failed to update attendance");
+      console.log("student_id", student_id);
+      toast.error("Failed to update attendance", error);
       return false;
     }
   };

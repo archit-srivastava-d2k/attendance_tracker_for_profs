@@ -9,7 +9,7 @@ export async function POST(req) {
 
         console.log("Received Data:", data)
 
-        if (!data.name || !data.grade || !data.contact || !data.address) {
+        if (!data.name || !data.grade) {
             return NextResponse.json({ error: "All fields are required." }, { status: 400 })
         }
 

@@ -5,7 +5,7 @@ import GlobalApis from '@/app/_services/GlobalApis'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import moment from 'moment'
-import React, { useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import AttendanceGrid from './_components/AttendanceGrid'
 
 
@@ -45,6 +45,7 @@ function attendance() {
             <div>
             <Button onClick={()=>searchHandler()}>Search</Button>
             </div>
+            
         </div>
         <AttendanceGrid attendanceList={attendanceList} selectmonth={selectmonth}/>
         </div>

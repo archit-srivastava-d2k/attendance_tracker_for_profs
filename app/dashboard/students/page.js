@@ -37,7 +37,7 @@ function student() {
             <h2>student</h2>
           </div>
           <div className='px-6'>
-            <AddNewStudent />
+            <AddNewStudent refreshData={refreshData}/>
           </div>
         </div>
         <div className='p-4'>
