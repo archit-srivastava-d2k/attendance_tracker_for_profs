@@ -8,6 +8,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import moment from "moment";
 import GlobalApis from "@/app/_services/GlobalApis";
 import { toast } from "sonner";
+import SelectAllAttendance from "./SelectAll";
 
 // Set up AG Grid license and module registration
 LicenseManager.setLicenseKey("your License Key");
@@ -19,103 +20,107 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
   const [colDefs, setColDefs] = useState([]);
 
   useEffect(() => {
-    const userList = uniqueRecord();
-
-    const daysInMonth = (month, year) => new Date(year, month, 0).getDate();
+    const userList = getUniqueRecords();
     const year = moment(selectmonth, "MM/YYYY").year();
     const month = moment(selectmonth, "MM/YYYY").month() + 1;
-    const numberOfDays = daysInMonth(month, year);
-    const daysArray = Array.from({ length: numberOfDays }, (_, i) => i + 1);
 
-    // Update row data with attendance fields
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    // Populate initial data
     const updatedRowData = userList.map((record) => {
       daysArray.forEach((day) => {
-        record[day] = isPresent(record.student_id, day); // Set attendance value
+        record[day] = isPresent(record.student_id, day);
       });
       return record;
     });
-
     setRowData(updatedRowData);
 
-    // Define column definitions
+    // Configure columns
     const staticCols = [
-      { headerName: "ID", field: "student_id" },
-      { headerName: "Student Name", field: "name" },
+      { headerName: "ID", field: "student_id",width:100 },
+      { headerName: "Name", field: "name" },
     ];
 
     const dynamicDayCols = daysArray.map((day) => ({
-      headerName: `${day}`,
+      headerName: `Day ${day}`,
       field: `${day}`,
-      editable: true,
-      width: 100,
+      width: 120,
       cellRenderer: CheckboxCellRenderer,
-      cellRendererParams: {
-        onCheckboxChange: (params) => handleCheckboxChange(params, day),
-      },
+      headerComponentFramework: () => (
+        <input
+          type="checkbox"
+          onChange={(e) => handleHeaderCheckboxChange(day, e.target.checked)}
+        />
+      ),
     }));
 
     setColDefs([...staticCols, ...dynamicDayCols]);
   }, [attendanceList, selectmonth]);
 
-  const isPresent = (student_id, day) => {
-    const result = attendanceList.find(
-      (record) => record.student_id === student_id && record.day === day
-    );
-    return result ? true : false;
-  };
-
-  const uniqueRecord = () => {
-    const uniqueIds = new Set();
+  const getUniqueRecords = () => {
     const uniqueRecords = [];
+    const seenIds = new Set();
+
     for (const record of attendanceList) {
-      if (!uniqueIds.has(record.student_id)) {
-        uniqueIds.add(record.student_id);
+      if (!seenIds.has(record.student_id)) {
+        seenIds.add(record.student_id);
         uniqueRecords.push(record);
       }
     }
+
     return uniqueRecords;
   };
 
-  const handleCheckboxChange = async (params, day) => {
+  const isPresent = (student_id, day) => {
+    return attendanceList.some(
+      (record) => record.student_id === student_id && record.day === day
+    );
+  };
+
+  const handleHeaderCheckboxChange = async (day, isChecked) => {
+    const updatedData = rowData.map((row) => {
+      row[day] = isChecked; // Update each row's value for the day
+      return row;
+    });
+
+    setRowData(updatedData);
+
+    // Update backend for each student
+    for (const row of updatedData) {
+      await updateAttendance(row.student_id, day, isChecked);
+    }
+  };
+
+  const handleCellCheckboxChange = async (params) => {
     const updatedData = [...rowData];
     const rowIndex = updatedData.findIndex(
       (row) => row.student_id === params.data.student_id
     );
 
     if (rowIndex !== -1) {
-      const presentStatus = !params.data[day]; // Toggle attendance
-      updatedData[rowIndex][day] = presentStatus;
+      const day = params.colDef.field;
+      const newValue = !params.data[day]; // Toggle value
+      updatedData[rowIndex][day] = newValue;
+
       setRowData(updatedData);
 
-      if (presentStatus) {
-        // Call API to mark attendance
-        const success = await OnMarkAttendance({
-          day,
-          student_id: params.data.student_id,
-          presentStatus,
-        });
-        console.log("student_id", params.data.student_id);
+      // Update backend
+      await updateAttendance(params.data.student_id, day, newValue);
+    }
+  };
 
-        if (!success) {
-          // Revert changes in case of an API error
-          updatedData[rowIndex][day] = !presentStatus;
-          setRowData(updatedData);
-        }
-      } else {
-        // Call API to delete attendance
-        const date = moment(selectmonth).format("MM/YYYY");
-        const success = await MarkAttendanceDelete({
-          student_id: params.data.student_id,
-          day,
-          date,
-        });
+  const updateAttendance = async (student_id, day, present) => {
+    const date = moment(selectmonth, "MM/YYYY").format("MM/YYYY");
+    const data = { student_id, day, date, present };
 
-        if (!success) {
-          // Revert changes in case of an API error
-          updatedData[rowIndex][day] = !presentStatus;
-          setRowData(updatedData);
-        }
-      }
+    try {
+      await GlobalApis.MarkAttendance(data); // Call your API
+      toast.success(
+        `Attendance ${present ? "marked" : "unmarked"} for Day ${day}`
+      );
+    } catch (error) {
+      toast.error("Failed to update attendance");
     }
   };
 
@@ -124,51 +129,25 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
       <input
         type="checkbox"
         checked={props.value || false}
-        onChange={() => props.onCheckboxChange(props)}
+        onChange={() => handleCellCheckboxChange(props)}
       />
     );
   };
 
-  const OnMarkAttendance = async ({ day, student_id, presentStatus }) => {
-    const date = moment(selectmonth).format("MM/YYYY");
-    const data = {
-      day,
-      student_id,
-      present: presentStatus ? 'true' : 'false',
-      date,
-    };
-
-    console.log("Mark Attendance",data);
-
-    try {
-      await GlobalApis.MarkAttendance(data);
-      toast.success(
-        `Attendance ${presentStatus ? "marked" : "unmarked"} for Student ID: ${student_id} on Day: ${day}`
-      );
-      return true;
-    } catch (error) {
-      console.error("Error marking attendance:", error);
-      console.log("student_id", student_id);
-      toast.error("Failed to update attendance", error);
-      return false;
-    }
-  };
-
-  const MarkAttendanceDelete = async ({ student_id, day, date }) => {
-    try {
-      await GlobalApis.MarkAttendanceDelete({ student_id, day, date });
-      toast.success(`Attendance deleted for Student ID: ${student_id} on Day: ${day}`);
-      return true;
-    } catch (error) {
-      console.error("Error deleting attendance:", error);
-      toast.error("Failed to delete attendance");
-      return false;
-    }
-  };
-  
-
   return (
-    <div className="ag-theme-alpine" style={{ height: 500 }}>
+
+    <div>
+        <SelectAllAttendance
+        selectmonth={selectmonth}
+        rowData={rowData}
+        setRowData={setRowData}
+      />
+
+   
+    <div className="ag-theme-alpine" style={{ height: 600 }}>
+      
+     
+
       <AgGridReact
         rowData={rowData}
         columnDefs={colDefs}
@@ -176,6 +155,8 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
         pagination={true}
         paginationPageSize={10}
       />
+     
+    </div>
     </div>
   );
 };

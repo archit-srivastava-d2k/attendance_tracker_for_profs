@@ -105,7 +105,6 @@ const [loading, setLoading] = useState(false);
                     {loading ? "Saving..." : "Save"}
                   </Button>
                 </div>
-                {loading && <div className="text-center mt-2">Loading...</div>}
               </form>
             </DialogDescription>
           </DialogHeader>

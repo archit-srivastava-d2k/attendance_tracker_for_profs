@@ -31,14 +31,18 @@ import {
 import GlobalApis from "@/app/_services/GlobalApis";
 import { toast } from "sonner";
 
+
+
 const StudentListTable = ({ students = [] , refreshData}) => {
- 
+ const [loading, setLoading] = useState(false);
 
   const deleteStudent = async(id) => {
     try {
+      setLoading(true);
       await GlobalApis.DeleteStudent(id);
       toast.success("Student deleted successfully");
       refreshData();
+      setLoading(false);
     } catch (error) {
       console.error("Error deleting student:", error);
     }
@@ -48,7 +52,8 @@ const StudentListTable = ({ students = [] , refreshData}) => {
   const customButton =(props)=>{
     return <AlertDialog>
     <AlertDialogTrigger>
-      <Button variant="destructive">
+      
+      <Button disabled={loading} variant="destructive">
         <Trash2 className="mr-2 h-4 w-4" />
         Delete
       </Button>
@@ -63,6 +68,7 @@ const StudentListTable = ({ students = [] , refreshData}) => {
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
+        
         <AlertDialogAction onClick={() => deleteStudent(props.data.id)}>Continue</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -98,7 +104,15 @@ const StudentListTable = ({ students = [] , refreshData}) => {
 
 
       </div>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense  fallback={<div>Loading...</div>}>
+      {
+        students.length === 0 && (
+          <div className="flex justify-center items-center ">
+            <p>Loading...</p>
+          </div>
+        )
+
+      }
       <AgGridReact
         rowData={rowData}
         columnDefs={colDefs}

@@ -1,23 +1,26 @@
 import React from 'react'
 import Header from './_components/Header'
-import SideNav from './_components/SideNav'
-import { Button } from '@/components/ui/button'
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { AppSidebar } from './_components/app-sidebar'
 
-function layout({children}) {
+function Layout({ children }) {
   return (
-    <div>
-        <div className='md:64 w-64 fixed md:block'>
-      
-        <SideNav/>
+    <SidebarProvider>
+      <div className="flex h-screen w-full">
+        <div className="hidden md:block  bg-gray-100">
+          <AppSidebar />
         </div>
-        <div className='md:pl-64'>
-            <Header/>
-           
-      {children}
-       </div>
-    
-    </div>
+        <div className="flex-1 bg-white overflow-auto">
+       
+          <SidebarTrigger />
+          <Header />
+          <main className="p-4 overflow-auto">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   )
 }
 
-export default layout
+export default Layout
