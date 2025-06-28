@@ -27,4 +27,3 @@ export const ATTENDANCE = pgTable("attendance",{
   date:varchar('date').notNull(),
 
 })
-

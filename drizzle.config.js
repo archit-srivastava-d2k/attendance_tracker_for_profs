@@ -6,6 +6,6 @@ export default defineConfig({
   schema: './db/schema.js',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: "postgresql://attendance-tracker_owner:vnrWQPiJL90G@ep-tight-bonus-a58s11f0-pooler.us-east-2.aws.neon.tech/attendance-tracker?sslmode=require",
   },
 });
