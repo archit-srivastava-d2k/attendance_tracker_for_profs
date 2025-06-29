@@ -13,6 +13,14 @@ const SelectAllAttendance = ({ selectmonth, rowData, setRowData }) => {
   const [daysInMonth, setDaysInMonth] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Helper function to calculate attendance percentage
+  const calculateAttendancePercentage = (record, totalDays) => {
+    const presentDays = Object.keys(record)
+      .filter((key) => !isNaN(key) && record[key] === true)
+      .length;
+    return ((presentDays / totalDays) * 100).toFixed(1);
+  };
+
   useEffect(() => {
     const year = moment(selectmonth, "MM/YYYY").year();
     const month = moment(selectmonth, "MM/YYYY").month() + 1;
@@ -38,58 +46,82 @@ const SelectAllAttendance = ({ selectmonth, rowData, setRowData }) => {
       `Do you want to mark all students as present for Day ${selectedDay}?`
     );
 
-        if (!isMarked) return;
+    if (!isMarked) return;
 
     setLoading(true);
     try {
-      // Prepare bulk update payload
+      const year = moment(selectmonth, "MM/YYYY").year();
+      const month = moment(selectmonth, "MM/YYYY").month() + 1;
+      const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+      // Prepare bulk update payload - Fixed: using student_id instead of id
       const updates = rowData.map((row) => ({
-        studentId: row.id,
-        day: selectedDay,
+        student_id: row.student_id, // Fixed: was row.id
+        day: parseInt(selectedDay),
         present: true,
-        month: selectmonth,
+        date: selectmonth, // Format: MM/YYYY
       }));
+
       // Call backend API to update attendance in bulk
       await GlobalApis.bulkMarkAttendance(updates);
-      // Update local state
-      const updatedRows = rowData.map((row) => ({
-        ...row,
-        [selectedDay]: true,
-      }));
+
+      // Update local state with recalculated attendance percentage
+      const updatedRows = rowData.map((row) => {
+        const updatedRow = {
+          ...row,
+          [selectedDay]: true,
+        };
+        // Recalculate attendance percentage
+        updatedRow.attendancePercentage = calculateAttendancePercentage(updatedRow, totalDaysInMonth);
+        return updatedRow;
+      });
+
       setRowData(updatedRows);
+      
       toast.success(`All students marked present for Day ${selectedDay}.`, {
         icon: <CheckSquare className="h-4 w-4" />,
       });
     } catch (error) {
+      console.error("Error marking bulk attendance:", error);
       toast.error("Failed to mark all students present. Please try again.");
     } finally {
       setLoading(false);
-      setSelectedDay("");
+      setSelectedDay(""); // Reset dropdown
     }
   };
 
   return (
     <Card className="mb-4">
       <CardContent className="flex items-center gap-4 p-4">
-        <label htmlFor="select-day" className="flex items-center gap-2">
+        <label htmlFor="select-day" className="flex items-center gap-2 text-gray-700 font-medium">
           <Calendar className="h-4 w-4" />
           Select Day:
         </label>
         <select
           id="select-day"
-          className="border rounded px-2 py-1"
+          className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[150px]"
           value={selectedDay}
           onChange={handleDropdownChange}
           disabled={loading}
+          style={{
+            colorScheme: 'light',
+            backgroundColor: 'white',
+            color: '#111827'
+          }}
         >
           <option value="">-- Select Day --</option>
           {daysInMonth.map((day) => (
-            <option key={day} value={day}>
-              {day}
+            <option key={day} value={day} style={{ backgroundColor: 'white', color: '#111827' }}>
+              Day {day}
             </option>
           ))}
         </select>
-        {loading && <span className="text-sm text-gray-500">Updating...</span>}
+        {loading && (
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-sm text-gray-500">Updating...</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

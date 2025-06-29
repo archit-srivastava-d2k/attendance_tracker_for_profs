@@ -14,7 +14,6 @@ function Attendance() {
     const [attendanceList, setAttendanceList] = useState([]);
 
     const searchHandler = () => {
-        console.log(selectgrade, selectmonth);
         const month = moment(selectmonth).format('MM/YYYY');
         GlobalApis.GetAllAttendanceList(selectgrade, month).then((res) => setAttendanceList(res));
     };
