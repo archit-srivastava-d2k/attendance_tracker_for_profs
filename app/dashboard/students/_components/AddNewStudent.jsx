@@ -52,7 +52,7 @@ const AddNewStudent = ({ refreshData }) => {
     async function getAllGradesList() {
       try {
         const data = await GlobalApis.GetAllGrades();
-        console.log("data", data);
+       
         setGrades(data)
       } catch (error) {
         console.error("Error fetching grades:", error);

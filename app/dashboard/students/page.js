@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import AddNewStudent from './_components/addNewStudent'
+import AddNewStudent from './_components/AddNewStudent'
 import GlobalApis from '@/app/_services/GlobalApis';
 import StudentListTable from './_components/StudentListTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
