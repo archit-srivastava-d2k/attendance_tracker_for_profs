@@ -9,14 +9,15 @@ import moment from "moment";
 import GlobalApis from "@/app/_services/GlobalApis";
 import { toast } from "sonner";
 import SelectAllAttendance from "./SelectAll";
-import { Card, CardContent, Calendar, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, XCircle, Users, Calendar } from "lucide-react";
 
-// AG Grid setup
+// Set up AG Grid license and module registration
 LicenseManager.setLicenseKey("your License Key");
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 provideGlobalGridOptions({ theme: "legacy" });
 
+// Custom Cell Renderer for Attendance Percentage
 const AttendancePercentageCellRenderer = (props) => {
   const percentage = parseFloat(props.value) || 0;
   let color = "#ef4444"; // red
@@ -24,7 +25,11 @@ const AttendancePercentageCellRenderer = (props) => {
   else if (percentage >= 75) color = "#f59e0b"; // yellow
   else if (percentage >= 60) color = "#f97316"; // orange
 
-  return <div style={{ color, fontWeight: 600 }}>{percentage.toFixed(1)}%</div>;
+  return (
+    <div style={{ color, fontWeight: 600 }}>
+      {percentage.toFixed(1)}%
+    </div>
+  );
 };
 
 const AttendanceGrid = ({ attendanceList, selectmonth }) => {
@@ -36,6 +41,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
     averageAttendance: 0,
   });
 
+  // Helper function to calculate attendance percentage
   const calculateAttendancePercentage = useCallback((record, daysInMonth) => {
     const presentDays = Object.keys(record)
       .filter((key) => !isNaN(key) && record[key] === true)
@@ -50,6 +56,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+    // Populate initial data
     const updatedRowData = userList.map((record) => {
       const updatedRecord = { ...record };
       let presentDays = 0;
@@ -64,6 +71,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
 
     setRowData(updatedRowData);
 
+    // Calculate stats
     const totalAttendance = updatedRowData.reduce(
       (sum, student) => sum + parseFloat(student.attendancePercentage || 0),
       0
@@ -77,6 +85,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
       averageAttendance: avgAttendance,
     });
 
+    // Configure columns
     const staticCols = [
       {
         headerName: "ID",
@@ -94,7 +103,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
         headerName: "Attendance %",
         field: "attendancePercentage",
         width: 130,
-        cellRenderer: AttendancePercentageCellRenderer,
+        cellRenderer: AttendancePercentageCellRenderer, // Use the custom component
       },
     ];
 
@@ -117,12 +126,14 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
   const getUniqueRecords = () => {
     const uniqueRecords = [];
     const seenIds = new Set();
+
     for (const record of attendanceList) {
       if (!seenIds.has(record.student_id)) {
         seenIds.add(record.student_id);
         uniqueRecords.push(record);
       }
     }
+
     return uniqueRecords;
   };
 
@@ -132,18 +143,19 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
     );
   };
 
-  const CustomHeaderComponent = (day) => {
-    return (
-      <div className="flex flex-col items-center p-1">
-        <span className="text-xs font-medium text-gray-700">{day}</span>
-        <input
-          type="checkbox"
-          className="mt-1 h-3 w-3 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
-          onChange={(e) => handleHeaderCheckboxChange(day, e.target.checked)}
-        />
-      </div>
-    );
-  };
+ const CustomHeaderComponent = (day) => {
+  return (
+    <div className="flex flex-col items-center p-1">
+      <span className="text-xs font-medium text-gray-700">{day}</span>
+      <input
+        type="checkbox"
+        className="mt-1 h-3 w-3 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+        onChange={(e) => handleHeaderCheckboxChange(day, e.target.checked)}
+      />
+    </div>
+  );
+};
+
 
   const handleHeaderCheckboxChange = async (day, isChecked) => {
     const year = moment(selectmonth, "MM/YYYY").year();
@@ -158,6 +170,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
 
     setRowData(updatedData);
 
+    // Update backend for each student
     for (const row of updatedData) {
       await updateAttendance(row.student_id, day, isChecked);
     }
@@ -184,6 +197,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
 
       setRowData(updatedData);
 
+      // Update backend
       await updateAttendance(params.data.student_id, day, newValue);
     }
   };
@@ -194,11 +208,15 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
 
     try {
       await GlobalApis.MarkAttendance(data);
-      toast.success(`Attendance ${present ? "marked" : "unmarked"} for Day ${day}`, {
-        icon: present ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />,
-      });
+      toast.success(
+        `Attendance ${present ? "marked" : "unmarked"} for Day ${day}`,
+        {
+          icon: present ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />,
+        }
+      );
     } catch (error) {
       toast.error("Failed to update attendance");
+      // Revert UI changes on failure
       setRowData((prevData) =>
         prevData.map((row) =>
           row.student_id === student_id ? { ...row, [day]: !present } : row
@@ -214,7 +232,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
           type="checkbox"
           checked={props.value || false}
           onChange={() => handleCellCheckboxChange(props)}
-          className="h-4 w-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+         className="h-4 w-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
         />
       </div>
     );
@@ -222,50 +240,53 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
 
   return (
     <div className="space-y-6">
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-4">
-            <div className="flex items-center">
+            <div className="flex items-center recognizer">
               <div>
                 <p className="text-sm text-blue-600 font-medium">Total Students</p>
-                <p className="text-2xl font-bold text-blue-800">
-                  {attendanceStats.totalStudents}
-                </p>
+                <p className="text-2xl font-bold text-blue-800">{attendanceStats.totalStudents}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-500 ml-auto" />
+              <Users className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
+
         <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <CardContent className="p-4">
-            <div className="flex items-center">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-600 font-medium">Average Attendance</p>
-                <p className="text-2xl font-bold text-green-800">
-                  {attendanceStats.averageAttendance}%
-                </p>
+                <p className="text-2xl font-bold text-green-800">{attendanceStats.averageAttendance}%</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500 ml-auto" />
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
+
         <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
           <CardContent className="p-4">
-            <div className="flex items-center">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-600 font-medium">Days in Month</p>
-                <p className="text-2xl font-bold text-purple-800">
-                  {attendanceStats.totalDays}
-                </p>
+                <p className="text-2xl font-bold text-purple-800">{attendanceStats.totalDays}</p>
               </div>
-              <Calendar className="h-8 w-8 text-purple-500 ml-auto" />
+              <Calendar className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <SelectAllAttendance selectmonth={selectmonth} rowData={rowData} setRowData={setRowData} />
+      {/* Select All Component */}
+      <SelectAllAttendance
+        selectmonth={selectmonth}
+        rowData={rowData}
+        setRowData={setRowData}
+      />
 
+      {/* Grid */}
       <Card className="shadow-lg">
         <CardContent className="p-0">
           <div className="ag-theme-alpine" style={{ height: 600 }}>
@@ -288,6 +309,7 @@ const AttendanceGrid = ({ attendanceList, selectmonth }) => {
         </CardContent>
       </Card>
 
+      {/* Legend */}
       <Card className="bg-gray-50">
         <CardContent className="p-4">
           <h3 className="font-medium text-gray-900 mb-3">Legend</h3>
