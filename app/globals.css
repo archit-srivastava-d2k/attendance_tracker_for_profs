@@ -69,9 +69,129 @@
     @apply bg-background text-foreground;
   }
 }
+/* Add this to your globals.css file */
 
+/* Force light mode for all checkboxes in AG Grid */
 .ag-theme-alpine input[type="checkbox"] {
   background-color: white !important;
-  border: 1px solid #d1d5db; /* Tailwind's gray-300 */
+  border: 1px solid #d1d5db !important; /* Tailwind's gray-300 */
+  color-scheme: light !important; /* This prevents dark mode from affecting the checkbox */
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 4px !important;
+  position: relative !important;
+  cursor: pointer !important;
 }
 
+/* Custom checkmark for checked state */
+.ag-theme-alpine input[type="checkbox"]:checked {
+  background-color: #3b82f6 !important; /* Blue background when checked */
+  border-color: #3b82f6 !important;
+}
+
+.ag-theme-alpine input[type="checkbox"]:checked::after {
+  content: "✓" !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: white !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+}
+
+/* Focus states */
+.ag-theme-alpine input[type="checkbox"]:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Hover states */
+.ag-theme-alpine input[type="checkbox"]:hover {
+  border-color: #6b7280 !important;
+}
+
+.ag-theme-alpine input[type="checkbox"]:checked:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* Force light mode for header checkboxes too */
+.ag-header input[type="checkbox"] {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  color-scheme: light !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 3px !important;
+  position: relative !important;
+  cursor: pointer !important;
+}
+
+.ag-header input[type="checkbox"]:checked {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.ag-header input[type="checkbox"]:checked::after {
+  content: "✓" !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: white !important;
+  font-size: 8px !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+}
+
+/* Force light mode for select elements */
+select {
+  color-scheme: light !important;
+  background-color: white !important;
+  color: #111827 !important; /* Dark text */
+  border: 1px solid #d1d5db !important;
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+  -moz-appearance: auto !important;
+}
+
+/* Specific styling for the Select Day dropdown */
+#select-day {
+  color-scheme: light !important;
+  background-color: white !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+  -moz-appearance: auto !important;
+}
+
+/* Focus and hover states for select */
+select:focus, #select-day:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+select:hover, #select-day:hover {
+  border-color: #6b7280 !important;
+}
+
+/* Force light mode for option elements */
+select option, #select-day option {
+  background-color: white !important;
+  color: #111827 !important;
+}
